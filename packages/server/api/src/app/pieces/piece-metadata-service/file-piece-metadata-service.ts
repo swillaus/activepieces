@@ -7,7 +7,7 @@ import {
     ActivepiecesError,
     ApEdition,
     ErrorCode,
-    EXACT_VERSION_PATTERN,
+    EXACT_VERSION_REGEX,
     extractPieceFromModule,
     isNil,
     ListVersionsResponse,
@@ -117,13 +117,33 @@ export const FilePieceMetadataService = (): PieceMetadataService => {
             const pieceMetadata = piecesMetadata.find((p) => p.name === params.name)
             return pieceMetadata?.version ? { [pieceMetadata.version]: {} } : {}
         },
+        async get({
+            name,
+            projectId,
+        }): Promise<PieceMetadataModel | undefined> {
+            const piecesMetadata = await loadPiecesMetadata()
+            const pieceMetadata = piecesMetadata.find((p) => p.name === name)
+
+            if (isNil(pieceMetadata)) {
+                return undefined
+            }
+
+            return toPieceMetadataModel({
+                pieceMetadata,
+                projectId,
+            })
+        },
         async getOrThrow({
             name,
             version,
             projectId,
         }): Promise<PieceMetadataModel> {
-            const piecesMetadata = await loadPiecesMetadata()
-            const pieceMetadata = piecesMetadata.find((p) => p.name === name)
+            const pieceMetadata = await this.get({
+                name,
+                version,
+                projectId,
+            })
+
             if (isNil(pieceMetadata)) {
                 throw new ActivepiecesError({
                     code: ErrorCode.PIECE_NOT_FOUND,
@@ -150,7 +170,7 @@ export const FilePieceMetadataService = (): PieceMetadataService => {
         },
 
         async getExactPieceVersion({ projectId, name, version }): Promise<string> {
-            const isExactVersion = EXACT_VERSION_PATTERN.test(version)
+            const isExactVersion = EXACT_VERSION_REGEX.test(version)
 
             if (isExactVersion) {
                 return version

@@ -48,13 +48,14 @@ EngineHelperTriggerResult<TriggerHookType.ON_DISABLE>
                 flowId: flowVersion.flowId,
                 simulate,
             }),
+            test: simulate,
             projectId,
         })
         return result
     }
     catch (error) {
-        exceptionHandler.handle(error)
         if (!params.ignoreError) {
+            exceptionHandler.handle(error)
             throw error
         }
         return null
